@@ -30,7 +30,7 @@ struct Sfera
 	vec3 o;//wspolrzedne srodka
 	float radius;
 	Sfera(vec3, float);
-
+	Sfera();
 };
 
 struct Ray
@@ -41,4 +41,26 @@ struct Ray
 
 
 };
-float intersect(Sfera, Ray);
+
+class Photon : public Ray
+{
+	float length; //w nm;
+};
+void* intersect(Sfera, Ray);
+
+struct Plane
+{
+	float a, b, c, d;
+	Plane(float, float, float, float);//z rownania plaszczyzny Ax+By+Cz+D=0
+	Plane();
+	
+
+};
+bool Is_behind(Plane, vec3);//sprawdza czy punkt p jest za czy przed plaszczyzna
+class Retina
+{
+	Sfera sphere;
+	Plane plane;
+	Retina(Sfera, Plane);
+	void* intersect(Photon); //zwraca punkt zderzenia z siatkowka, jezeli foton nie trafi w siatkowke zwraca vec3
+};
