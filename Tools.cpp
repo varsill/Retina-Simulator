@@ -1,6 +1,7 @@
 
 #include "Tools.h"
 #include <math.h>
+#include <typeinfo>
 vec3::vec3()
 {
 	x = y = z = 0.0f;
@@ -86,23 +87,67 @@ Sfera::Sfera(vec3 a, float r)
 	o = a;
 	radius = r;
 }
+Sfera::Sfera()
+{
+	o = vec3();
+	radius = 0;
+}
 Ray::Ray(vec3 a, vec3 b)
 {
 	origin = a;
 	dir = unitise(b);
 }
 
-inline float intersect_sphere(Sfera sfera, Ray ray)
+inline void* intersect_sphere(Sfera sfera, Ray ray)
 {
-	float b = ray.dir.x*(ray.origin.x - sfera.o.x) + ray.dir.y*(ray.origin.y - sfera.o.y) + ray.dir.z*(ray.origin.z - sfera.o.z);
+	//wspolczynniki rownania kwadratowego
+	float b = 2*(ray.dir.x*(ray.origin.x - sfera.o.x) + ray.dir.y*(ray.origin.y - sfera.o.y) + ray.dir.z*(ray.origin.z - sfera.o.z));
 	float c = pow(ray.origin.x - sfera.o.x, 2) + pow(ray.origin.y - sfera.o.y, 2) + pow(ray.origin.z - sfera.o.z, 2) - pow(sfera.radius, 2);
 	float delta = b*b - 4 * c;
-	if (delta <= 0) return -1;
+	if (delta <= 0) return (bool*) false;
 	else
 	{
 		float t1 = (-b - sqrt(delta))/2;
 		float t2 = (-b + sqrt(delta)) / 2;
-		if (distance(vec3(), ray.dir*t1)) return t1;
-		else return t2;
+		float* r;
+		if (distance(vec3(), ray.dir*t1)) r=&t1;
+		else r=&t2;
+		return r;
+	}
+}
+
+
+Plane::Plane(float x, float y, float z, float w)
+{
+	a = x;
+	b = y;
+	c = z;
+	d = w;
+}
+Plane::Plane()
+{
+	a = b = c = d = 0;
+}
+bool Is_behind(Plane plane, vec3 p)//sprawdza czy punkt leży za płaszczyzną licząć od punktu (0, 0, 0)
+{
+	float n = p.x*plane.a + p.y*plane.b + p.z*plane.c + plane.d;
+	if (n >= 0) return true;//punkt jest za plaszczyzna
+	else return false;//punkt jest przed plaszczyzna
+}
+
+Retina::Retina(Sfera sfera, Plane powierzchnia)//Mozliwe zrodlo problemow xD
+{
+	sphere = sfera;
+	plane = powierzchnia;
+}
+void* Retina::intersect(Photon foton)//sprawdzanie przeciecia z siatkowka - zwraca wskaznik na vec3 ze wspolrzednymi przeciecia lub zwraca wskaznik na zmienna boolean z typem false; typeid(result);
+{
+	void* t = intersect_sphere(this->sphere, (Ray)foton);
+	if (typeid(t) == typeid(bool)) return (bool*)false;//zwroc falsz
+	else
+	{
+		vec3 pom = foton.dir * *(float*)t + foton.origin;//punkt p
+		if (Is_behind(this->plane, pom) == false) return (bool*)false;//zwroc falsz
+		else return (vec3*)&pom;//zwroc wspolrzedne punktu przeciecia
 	}
 }
