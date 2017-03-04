@@ -1,2 +1,2 @@
 # Retina-Symulator
-proszę wrzucać tu nasz kod xD
+Exclusive for Cherenkov Radiation Busters.
