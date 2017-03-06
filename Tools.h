@@ -1,6 +1,6 @@
 #pragma once
-
-
+#include <vector>
+using namespace std;
 struct vec3 {
 	typedef const vec3& i;
 	typedef vec3& io;
@@ -24,15 +24,6 @@ inline float dotProd(vec3::i a, vec3::i b);//iloczyn skalarny
 inline vec3 uCrossProd(vec3::i a, vec3::i b);//iloczyn wektorowy
 inline vec3 uChangeSpace(vec3::i V, vec3::i Ex, vec3::i Ey, vec3::i Ez);//zamiana przestrzeni
 
-
-struct Sfera
-{
-	vec3 o;//wspolrzedne srodka
-	float radius;
-	Sfera(vec3, float);
-	Sfera();
-};
-
 struct Ray
 {
 	vec3 origin; //poczatek
@@ -41,6 +32,18 @@ struct Ray
 
 
 };
+struct Sfera
+{
+	int sign;//0 - rowna sie; 1-wiekszy; -1 - mniejszy
+	vec3 o;//wspolrzedne srodka
+	float radius;
+	Sfera(vec3, float, bool);
+	Sfera();
+	vec3 intersect(Ray, bool&);
+	bool is_inside(vec3);
+};
+
+
 
 class Photon : public Ray
 {
@@ -50,17 +53,45 @@ void* intersect(Sfera, Ray);
 
 struct Plane
 {
+	int sign;//0 - rowna sie; 1-wiekszy(za); -1 - mniejszy (przed)
 	float a, b, c, d;
-	Plane(float, float, float, float);//z rownania plaszczyzny Ax+By+Cz+D=0
+	vec3 normal;
+	Plane(float, float, float, float, bool);//z rownania plaszczyzny Ax+By+Cz+D=0
 	Plane();
-	
+	vec3 intersect(Ray, bool&);
+	bool is_inside(vec3);
+	vec3 rzutuj(vec3, bool&);//rzutuje punkt na plaszczyzne wzgledem wektora normalnego
 
 };
 bool Is_behind(Plane, vec3);//sprawdza czy punkt p jest za czy przed plaszczyzna
-class Retina
+class Shape
 {
-	Sfera sphere;
+protected:
 	Plane plane;
+	Sfera sfera;
+	float index;//wspolczynnik zalamania swiatla
+				//Absorbtion abs;//info na temat absorbcji spektrum promieniowania
+public:
+	Shape(Sfera, Plane, float); //Ksztalt zlozony z czesci wspolnej dwoch struktur
+	bool is_inside(vec3);//sprawdza czy punkt nalezy do struktury ksztaltu
+	vec3 intersect(Ray, bool&);
+	Shape();
+};
+class Retina:public Shape
+{
+	Plane rzutnia;
 	Retina(Sfera, Plane);
-	void* intersect(Photon); //zwraca punkt zderzenia z siatkowka, jezeli foton nie trafi w siatkowke zwraca vec3
+public:
+	vec3 rzutuj(vec3, bool&);//rzutuje z zachowaniem odleglosci pomiedzy punkatmi na rzutni
+};
+
+
+class Oko
+{
+	
+public:
+	Oko();
+	vector <Shape> elementy;
+	bool trace_routte(Photon&, int);//zwroci prawde jezeli foton uderzyl w siatkowke lub falsz jezeli stalo sie cos innego - jezeli bedzie prawda, to stan fotonu na wyjsciu bedzie odpowiadał punktowi zderzenia z siatkówką
+	
 };
