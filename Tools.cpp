@@ -82,15 +82,17 @@ inline vec3 uChangeSpace(vec3::i V, vec3::i Ex, vec3::i Ey, vec3::i Ez) {
 		1.0f
 	);
 }
-Sfera::Sfera(vec3 a, float r)
+Sfera::Sfera(vec3 a, float r, bool s)
 {
 	o = a;
 	radius = r;
+	sign = s;
 }
 Sfera::Sfera()
 {
 	o = vec3();
 	radius = 0;
+	sign = 0;
 }
 Ray::Ray(vec3 a, vec3 b)
 {
@@ -98,56 +100,160 @@ Ray::Ray(vec3 a, vec3 b)
 	dir = unitise(b);
 }
 
-inline void* intersect_sphere(Sfera sfera, Ray ray)
+vec3 Sfera::intersect(Ray ray, bool &kod)
 {
+	kod = true;
 	//wspolczynniki rownania kwadratowego
-	float b = 2*(ray.dir.x*(ray.origin.x - sfera.o.x) + ray.dir.y*(ray.origin.y - sfera.o.y) + ray.dir.z*(ray.origin.z - sfera.o.z));
-	float c = pow(ray.origin.x - sfera.o.x, 2) + pow(ray.origin.y - sfera.o.y, 2) + pow(ray.origin.z - sfera.o.z, 2) - pow(sfera.radius, 2);
+	float b = 2*(ray.dir.x*(ray.origin.x - o.x) + ray.dir.y*(ray.origin.y - o.y) + ray.dir.z*(ray.origin.z - o.z));
+	float c = pow(ray.origin.x - o.x, 2) + pow(ray.origin.y - o.y, 2) + pow(ray.origin.z - o.z, 2) - pow(radius, 2);
 	float delta = b*b - 4 * c;
-	if (delta <= 0) return (bool*) false;
+	if (delta <= 0) {
+		kod = false;
+		return vec3(0,0,0);
+	}
 	else
 	{
 		float t1 = (-b - sqrt(delta))/2;
 		float t2 = (-b + sqrt(delta)) / 2;
-		float* r;
-		if (distance(vec3(), ray.dir*t1)) r=&t1;
-		else r=&t2;
-		return r;
+		vec3 bufor = ray.origin + (ray.dir*t2);
+		return bufor;
 	}
 }
-
-
-Plane::Plane(float x, float y, float z, float w)
+bool Sfera::is_inside(vec3 point)
+{
+	float r = pow((o.x - point.x), 2) + pow((o.y - point.y), 2) + pow((o.y - point.y), 2);
+	if (r == radius) return true;
+	else if (r < radius&&sign == -1) return true;
+	else if (r > radius&&sign == 1) return true;
+	else return false;
+}
+Plane::Plane(float x, float y, float z, float w, bool s)
 {
 	a = x;
 	b = y;
 	c = z;
-	d = w;
+d = w;
+sign = s;
+normal = vec3(a, b, c);
 }
 Plane::Plane()
 {
 	a = b = c = d = 0;
+	sign = 0;
+	normal = vec3(0, 0, 0);
 }
-bool Is_behind(Plane plane, vec3 p)//sprawdza czy punkt leży za płaszczyzną licząć od punktu (0, 0, 0)
+vec3 Plane::rzutuj(vec3 p, bool& kod)
 {
-	float n = p.x*plane.a + p.y*plane.b + p.z*plane.c + plane.d;
-	if (n >= 0) return true;//punkt jest za plaszczyzna
-	else return false;//punkt jest przed plaszczyzna
-}
-
-Retina::Retina(Sfera sfera, Plane powierzchnia)//Mozliwe zrodlo problemow xD
-{
-	sphere = sfera;
-	plane = powierzchnia;
-}
-void* Retina::intersect(Photon foton)//sprawdzanie przeciecia z siatkowka - zwraca wskaznik na vec3 ze wspolrzednymi przeciecia lub zwraca wskaznik na zmienna boolean z typem false; typeid(result);
-{
-	void* t = intersect_sphere(this->sphere, (Ray)foton);
-	if (typeid(t) == typeid(bool)) return (bool*)false;//zwroc falsz
+	kod = true;
+	Ray ray(p, unitise(normal));
+	intersect(ray, kod);
+	if (kod != false) return intersect(ray, kod);
 	else
 	{
-		vec3 pom = foton.dir * *(float*)t + foton.origin;//punkt p
-		if (Is_behind(this->plane, pom) == false) return (bool*)false;//zwroc falsz
-		else return (vec3*)&pom;//zwroc wspolrzedne punktu przeciecia
+		kod = false;
+		return vec3(0, 0, 0);
 	}
+}
+bool Plane::is_inside(vec3 point)
+{
+	float absolute = abs(a*point.x + b*point.y + c*point.z + d);
+	if (absolute == 0) return true;
+	else
+	{
+		float result = (a*point.x + b*point.y + c*point.z + d) / absolute;//po podstawieniu do wzoru
+		if (result == sign) return true;
+		else return false;
+	}
+}
+vec3 Plane::intersect(Ray ray, bool& kod)
+{
+	vec3 buf(a, b, c);
+	float r = dotProd(ray.dir, buf);//UWAGA
+
+	float t = (-d) / (r + ray.origin.x + ray.origin.y + ray.origin.z);
+	if (t <= 0)
+	{
+		kod = false;
+		return	vec3(0, 0, 0);
+	}//UWAGA
+	else
+	{
+		vec3 bufor(a*t, b*t, c*t);
+		return bufor;
+	}
+}
+
+Retina::Retina(Sfera sfera2, Plane powierzchnia)//Mozliwe zrodlo problemow xD
+{
+	sfera = sfera2;
+	plane = powierzchnia;
+}
+
+vec3 Retina::rzutuj(vec3 p, bool& kod)
+{
+	vec3 wynik = rzutnia.rzutuj(sfera.o, kod);
+
+	if (kod == false) return vec3(0, 0, 0);
+	else
+	{
+		vec3 rzut_o = wynik;
+
+		wynik = rzutnia.rzutuj(p, kod);
+		if (kod == false) return vec3(0, 0, 0);
+		else
+		{
+			float leng = length(p - sfera.o);
+			vec3 loc = wynik;
+			vec3 dir = unitise(loc - rzut_o);
+			vec3 wynik = rzut_o + (dir*leng);//punkt na plaszczyznie rzutni
+		}
+	}
+}
+Shape::Shape()
+{
+
+}
+Shape::Shape(Sfera s, Plane p, float f)
+{
+	index = f;
+	sfera = s;
+	plane = p;
+}
+vec3 Shape::intersect(Ray ray, bool& kod)
+{
+	vec3 wynik = sfera.intersect(ray, kod);
+	if (kod == true) return wynik;
+	else
+	{
+		wynik = plane.intersect(ray, kod); //do przemyslenia!
+		if (kod == true) return wynik;
+		else return vec3(0, 0, 0);
+	}
+}
+bool Shape::is_inside(vec3 p)
+{
+	if ((sfera.is_inside(p) == true) && (plane.is_inside(p) == true)) return true;
+	else return false;
+}
+Oko::Oko()
+{
+
+}
+bool Oko::trace_routte(Photon& foton, int pop=0)
+{
+	bool k;
+	int i;
+	for (i= 0; i < elementy.size(); i++)
+	{
+		if (elementy[i].is_inside(foton.origin)&&i!=pop) break;
+	}
+	if (elementy[i].is_inside(foton.origin) == false) return false;//poza okiem
+	if (typeid(elementy[i]) == typeid(Retina)) return true; //trafilo w siatkowke
+	vec3 norigin = elementy[i].intersect(foton, k); //okreslenie zrodla "nowego" fotonu
+	vec3 ndir = zalamanie(); //okreslenie kierunku "nowego" fotonu po załamaniu
+		float len = length(norigin - foton.origin);
+		if(absorbcja(len)==true) return false;//jakas madra funkcja powodująca zniknięcie lub przejscie fotonu
+		foton.dir = ndir;//przypisanie nowych wlasnosci fotonowi 
+		foton.origin = norigin;
+		return trace_routte(foton, i);
 }
