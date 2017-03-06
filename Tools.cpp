@@ -2,6 +2,10 @@
 #include "Tools.h"
 #include <math.h>
 #include <typeinfo>
+#include <time.h>
+#include <cstdlib>
+
+
 vec3::vec3()
 {
 	x = y = z = 0.0f;
@@ -256,4 +260,12 @@ bool Oko::trace_routte(Photon& foton, int pop=0)
 		foton.dir = ndir;//przypisanie nowych wlasnosci fotonowi 
 		foton.origin = norigin;
 		return trace_routte(foton, i);
+}
+
+int randint(int pocz, int kon)
+{
+    srand( time( NULL ) );
+    int amount = kon - pocz+1;
+
+    return ((rand() % amount) + pocz);
 }
