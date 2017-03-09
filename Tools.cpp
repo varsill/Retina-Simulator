@@ -269,3 +269,12 @@ int randint(int pocz, int kon)
 
     return ((rand() % amount) + pocz);
 }
+
+bool procent(int howmuch)
+{
+    int wartosc;
+    wartosc = randint(1,100);
+    if(wartosc > howmuch) return false;
+    else return true;   
+}
+
