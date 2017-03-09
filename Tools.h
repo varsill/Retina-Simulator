@@ -24,8 +24,9 @@ inline float dotProd(vec3::i a, vec3::i b);//iloczyn skalarny
 inline vec3 uCrossProd(vec3::i a, vec3::i b);//iloczyn wektorowy
 inline vec3 uChangeSpace(vec3::i V, vec3::i Ex, vec3::i Ey, vec3::i Ez);//zamiana przestrzeni
 
-int randint(int, int); // lowosowa liczba z podanego zakresu
-bool procent(int); //ile procent na zwrocenie true
+int randint(int, int); // losowa liczba z podanego zakresu
+bool procent(int,int); //ile procent na zwrocenie true
+bool absorbcja(int, struktura) // zwraca true jesli nastapila absorbcja 
 
 struct Ray
 {
