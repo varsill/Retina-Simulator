@@ -4,6 +4,7 @@
 #include <typeinfo>
 #include <time.h>
 #include <cstdlib>
+#includ <vector>
 
 
 vec3::vec3()
