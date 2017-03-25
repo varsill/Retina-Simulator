@@ -271,11 +271,16 @@ int randint(int pocz, int kon)
     return ((rand() % amount) + pocz);
 }
 
-bool procent(int howmuch)
+bool procent(int howmuch,int accuracy = 100) 
 {
     int wartosc;
-    wartosc = randint(1,100);
+    wartosc = randint(1,accuracy);
     if(wartosc > howmuch) return false;
     else return true;   
 }
 
+bool absorbcja(int len, struktura)
+{
+   int x; //wzorek liczacu prawdopodobienstwo 
+   return procent(x,1000); 
+}
