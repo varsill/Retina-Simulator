@@ -1,5 +1,6 @@
 #pragma once
 #include <vector>
+#hello git
 using namespace std;
 int randint(int, int); // random number from particular range
 bool procent(int, int);//returns true with probability of first parameter
